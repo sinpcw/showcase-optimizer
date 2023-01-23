@@ -7,8 +7,8 @@
 StratifiedKFoldによって5foldに分割し、そのうちの1foldを使用している.  
 分割したファイルは sample_train.csv, sample_valid.csv としてリポジトリに配置している.  
     
-D-Adaptationにはschedulerについては通常通りのものを利用と記載が見受けられたため timm のスケジューラを利用.  
-3epoch の warmup を実施後に通常の lr となるように設定.  
+D-Adaptationにはschedulerについては通常通りのものを利用との記載が見受けられたため、  
+timm のスケジューラを利用して 3epoch の warmup を実施後に通常の lr となるように設定.  
   
 オーグメンテーションなどの設定はコード記載通り.  
 
