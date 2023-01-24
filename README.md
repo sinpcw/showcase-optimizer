@@ -69,17 +69,26 @@ class CFG:
 python train.py >> log.txt
 ```
 
-## 実験環境
-実験環境としては以下の通り.  
-|   |  |
+## 実験条件
+実験条件としてOptimizerやLR以外のパラメータは以下の通り.  
+
+| 学習設定 |  |
 | ---- | ---- |
-| CPU | AMD Ryzen 3700X |
-| RAM | 64GB |
-| GPU | NVIDIA RTX 4070 Ti | 
-| Framework | PyTorch 1.13.1 |
+| model | tf_efficientnet_b0_ns (timm実装) |
+| image_size | 224 |
+| num_classes | 120 |
 | batch_size | 64 |
 | epoch | 50 |
 | amp | True (fp16) |
+| pretrained | imagenet |
+  
+実験した環境としては以下の通り.  
+| 環境  |  |
+| ---- | ---- |
+| CPU | AMD Ryzen 7 3700X |
+| RAM | 64GB |
+| GPU | NVIDIA RTX 4070 Ti | 
+| Framework | PyTorch 1.13.1 |
 
 ## 引用
 * Dataset  
@@ -90,4 +99,5 @@ kaggleの[dog-breed-identification](https://www.kaggle.com/c/dog-breed-identific
 実装については[このリポジトリ](https://github.com/davda54/sam/)から引用. 
   
 * D-Adaptation(DAdaptAdam)  
-[D-Adaptation](https://github.com/facebookresearch/dadaptation)の実装を利用. 
+論文は[Learning-Rate-Free Learning by D-Adaptation](https://arxiv.org/pdf/2301.07733v2.pdf)  
+実装については[D-Adaptation](https://github.com/facebookresearch/dadaptation)を利用. 
