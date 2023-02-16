@@ -5,19 +5,22 @@ import pandas as pd
 import datetime
 import timm
 import albumentations as A
-import dadaptation
 import torch
 from torch.cuda.amp import autocast
 from torch.cuda.amp.grad_scaler import GradScaler
 from torch.utils.data.dataset import Dataset
-from timm.scheduler import CosineLRScheduler
 from sklearn.metrics import accuracy_score
+from timm.scheduler import CosineLRScheduler
+
+import dadaptation
+from lion_pytorch import Lion
 
 class CFG:
     device = 'cuda'
     amp_use = True
     amp_dtype = torch.float16
     epoch = 50
+    # epoch = 200
     num_classes = 120
     batch_size = 64
     image_size = 224
@@ -26,9 +29,50 @@ class CFG:
     persistent_workers = (True if os.name == 'nt' else False)
     train_csv = 'sample_train.csv'
     valid_csv = 'sample_valid.csv'
+    # Select Optimizer:
     optimizer = 'Adam'
     # optimizer = 'SAM_Adam'
+    # optimizer = 'AdamW'
+    # optimizer = 'SAM_AdamW'
     # optimizer = 'DAdaptAdam'
+    # optimizer = 'SAM_DAdaptAdam'
+    # optimizer = 'Lion'
+    # optimizer = 'SAM_Lion'
+    # Select Model:
+    model_name = 'resnet50'
+    # model_name = 'tf_efficientnet_b0'
+    # model_name = 'vit_base_patch16_224.augreg_in21k_ft_in1k'
+
+def get_optimizer_and_scheduler(model):
+    optim = None
+    if CFG.optimizer == 'Adam':
+        optim = torch.optim.Adam(model.parameters(), lr=1e-4)
+        base_lr = 1e-4
+    if CFG.optimizer == 'SAM_Adam':
+        optim = SAM(model.parameters(), torch.optim.Adam, lr=1e-4, rho=0.05)
+        base_lr = 1e-4
+    if CFG.optimizer == 'AdamW':
+        optim = torch.optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-5)
+        base_lr = 1e-4
+    if CFG.optimizer == 'SAM_AdamW':
+        optim = SAM(model.parameters(), torch.optim.AdamW, lr=1e-4, weight_decay=1e-5, rho=0.05)
+        base_lr = 1e-4
+    if CFG.optimizer == 'DAdaptAdam':
+        optim = dadaptation.DAdaptAdam(model.parameters(), lr=1.0)
+        base_lr = 1.0
+    if CFG.optimizer == 'SAM_DAdaptAdam':
+        optim = SAM(model.parameters(), dadaptation.DAdaptAdam, lr=1.0, rho=0.05)
+        base_lr = 1.0
+    if CFG.optimizer == 'Lion':
+        optim = Lion(model.parameters(), lr=1e-5)
+        base_lr = 1e-5
+    if CFG.optimizer == 'SAM_Lion':
+        optim = SAM(model.parameters(), Lion, lr=1e-5, rho=0.05)
+        base_lr = 1e-5
+    if optim is None:
+        raise NameError('{} is not defined.'.format(CFG.optimizer))
+    scheduler = CosineLRScheduler(optim, t_initial=CFG.epoch, lr_min=base_lr * 1e-3, warmup_t=3, warmup_lr_init=base_lr * 1e-2, warmup_prefix=True)
+    return optim, scheduler
 
 class SAM(torch.optim.Optimizer):
     """
@@ -87,22 +131,6 @@ class SAM(torch.optim.Optimizer):
                     p=2
                )
         return norm
-
-def get_optimizer_and_scheduler(model):
-    optim = None
-    if CFG.optimizer == 'Adam':
-        optim = torch.optim.Adam(model.parameters(), lr=1e-4)
-        base_lr = 1e-4
-    if CFG.optimizer == 'SAM_Adam':
-        optim = SAM(model.parameters(), torch.optim.Adam, lr=1e-4, rho=0.05)
-        base_lr = 1e-4
-    if CFG.optimizer == 'DAdaptAdam':
-        optim = dadaptation.DAdaptAdam(model.parameters(), lr=1.0)
-        base_lr = 1.0
-    scheduler = timm.scheduler.CosineLRScheduler(optim, t_initial=CFG.epoch, lr_min=base_lr * 1e-3, warmup_t=3, warmup_lr_init=base_lr * 1e-2, warmup_prefix=True)
-    if optim is None:
-        raise NameError('{} is not defined.'.format(CFG.optimizer))
-    return optim, scheduler    
 
 def train_epoch(model, loader, loss_fn, scaler, optim):
     value = 0
@@ -221,21 +249,44 @@ def get_timestamp():
     t = datetime.datetime.now()
     return t.strftime('%Y/%m/%d %H:%M:%S')
 
+def scheduler_step(scheduler, epoch):
+    if scheduler is None:
+        return
+    if isinstance(scheduler, CosineLRScheduler):
+        scheduler.step(epoch)
+    else:
+        scheduler.step()
+    
 def main():
     train_loader = get_train_loader(pd.read_csv(CFG.train_csv))
     valid_loader = get_valid_loader(pd.read_csv(CFG.valid_csv))
-    model = timm.create_model('tf_efficientnet_b0', num_classes=CFG.num_classes, pretrained=True).to(CFG.device)
+    model = timm.create_model(CFG.model_name, num_classes=CFG.num_classes, pretrained=True).to(CFG.device)
     if CFG.device != 'cpu' and CFG.amp_use:
         model.forward = autocast()(model.forward)
     optim, scheduler = get_optimizer_and_scheduler(model)
     scaler = GradScaler(enabled=CFG.amp_use)
     loss_fn = torch.nn.CrossEntropyLoss()
     # torch.autograd.set_detect_anomaly(True)
+    observe = {
+        'best_score' : 0,
+        'best_epoch' : 0,
+        'set_time' : datetime.datetime.now(),
+        'end_time' : None
+    }
     for e in range(1, 1+CFG.epoch):
         train_loss = train_epoch(model, train_loader, loss_fn, scaler, optim)
         valid_loss, valid_score = valid_epoch(model, valid_loader, loss_fn, scaler)
-        scheduler.step(e)
+        scheduler_step(scheduler, e)
         print('[{}] epoch: {:2}, train_loss: {:.4e}, valid_loss: {:.4e}, accuracy: {:.3f}'.format(get_timestamp(), e, train_loss, valid_loss, valid_score))
+        if valid_score > observe['best_score']:
+            observe['best_score'] = valid_score
+            observe['best_epoch'] = e
+    observe['end_time'] = datetime.datetime.now()
+    # memo:
+    print('[{}] best accuracy: {:.3f} ({}epoch)'.format(get_timestamp(), observe['best_score'], observe['best_epoch']))
+    print('[{}] training time: {} sec.'.format(get_timestamp(), (observe['end_time'] - observe['set_time']).seconds))
+    print('[{}]    model name: {}'.format(get_timestamp(), CFG.model_name))
+    print('[{}]     optimizer: {}'.format(get_timestamp(), CFG.optimizer))
 
 """ エントリポイント """
 if __name__ == "__main__":
