@@ -73,7 +73,8 @@ DAdaptationの他者検証によるとそんなに悪くないというケース
   
 2023/02/16に追加したLionについては、基本的にAdamより速いようである.  
 (同一条件下ではAdamよりもLionのほうがいずれのケースでも早く終了していることから)  
-efficientnet_b0では 0.05 ほどAdamより劣るが、ViTやResNet50であればだとおおよそ同じ程度のスコアが得られている.  
+efficientnet_b0では 0.05 ほどAdamより劣るが、  
+ViTやResNet50であればだとおおよそ同じ程度のスコアが得られている.  
 メモリ利用もAdam で10.2GB程度に対して 9.5GB程度と効率的なようである.  
 省メモリかつ高速なのはよいが微妙に精度面で劣っている点が懸念.  
 
@@ -141,8 +142,9 @@ kaggleの[dog-breed-identification](https://www.kaggle.com/c/dog-breed-identific
 実装については[このリポジトリ](https://github.com/davda54/sam/)から引用. 
   
 * D-Adaptation(DAdaptAdam)  
+論文は[Learning-Rate-Free Learning by D-Adaptation](https://arxiv.org/abs/2301.07733)  
 [D-Adaptation](https://github.com/facebookresearch/dadaptation)の実装を利用. 
 
-* Lion
+* Lion  
 論文は[Symbolic Discovery of Optimization Algorithms](https://arxiv.org/abs/2302.06675)  
 [Lion - Pytorch](https://github.com/lucidrains/lion-pytorch)の実装を利用.
