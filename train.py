@@ -64,10 +64,10 @@ def get_optimizer_and_scheduler(model):
         optim = SAM(model.parameters(), dadaptation.DAdaptAdam, lr=1.0, rho=0.05)
         base_lr = 1.0
     if CFG.optimizer == 'Lion':
-        optim = Lion(model.parameters(), lr=1e-5, weight_decay=1e-4)
+        optim = Lion(model.parameters(), lr=1e-5, weight_decay=1e-3)
         base_lr = 1e-5
     if CFG.optimizer == 'SAM_Lion':
-        optim = SAM(model.parameters(), Lion, lr=1e-5, weight_decay=1e-4, rho=0.05)
+        optim = SAM(model.parameters(), Lion, lr=1e-5, weight_decay=1e-3, rho=0.05)
         base_lr = 1e-5
     if optim is None:
         raise NameError('{} is not defined.'.format(CFG.optimizer))

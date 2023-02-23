@@ -28,13 +28,12 @@ timm のスケジューラを利用して 3epoch の warmup を実施後に通�
 |  Adam  | 0.764 | 981 sec. | 1e-4 | 1e-7 | - |
 |  Adam+SAM  | 0.772 | 1605 sec. | 1e-4 | 1e-7 | - |
 |  DAdaptAdam  | 0.625 | 1252 sec. | 1.0 | 1e-3 | - |
-|  Lion  | 0.713 | 836 sec. | 1e-4 | 1e-7 | - |
-|  Lion  | 0.739 | 908 sec. | 1e-5 | 1e-8 | - |
 |  AdamW  | 0.758 | 1036 sec. | 1e-4 | 1e-7 | 1e-4 |
-|  Lion  | 0.744 | 961 sec. | 1e-5 | 1e-8 | 1e-4 |
+|  Lion  | 0.746 | 956 sec. | 1e-5 | 1e-8 | 1e-3 |
   
-<img src="images/tf_efficientnet_b0_epoch_acc_curve.png" alt="epoch_accuracy_curve" width="480px" />  
+<img src="images/tf_efficientnet_b0.png" alt="tf_efficientnet_b0" width="480px" />  
   
+Lionのハイパーパラメータによる調査は[こちら](./result_lion.md)に記載.  
   
 ### vit_base_patch16_224
 
@@ -46,8 +45,10 @@ timm のスケジューラを利用して 3epoch の warmup を実施後に通�
 |  AdamW+SAM  | 0.791 | 3216 sec. | 1e-4 | 1e-7 | 1e-4 |
 |  Lion  | 0.775 | 1755 sec. | 1e-5 | 1e-8 | 1e-4 |
 |  Lion+SAM  | 0.773 | 3171 sec. | 1e-5 | 1e-8 | 1e-4 |
+|  Lion  | 0.786 | 1778 sec. | 1e-5 | 1e-8 | 1e-3 |
+|  Lion+SAM  | 0.724 | 3188 sec. | 1e-5 | 1e-8 | 1e-3 |
   
-<img src="images/vit_base_patch16_224_epoch_acc_curve.png" alt="epoch_accuracy_curve" width="480px" />  
+<img src="images/vit_base_patch16_224.png" alt="vit_base_patch16_224" width="480px" />  
   
 
 ### resnet50
@@ -60,8 +61,10 @@ timm のスケジューラを利用して 3epoch の warmup を実施後に通�
 |  AdamW+SAM  | 0.867 | 3240 sec. | 1e-4 | 1e-7 | 1e-4 |
 |  Lion  | 0.849 | 1752 sec. | 1e-5 | 1e-8 | 1e-4 |
 |  Lion+SAM  | 0.856 | 3214 sec. | 1e-5 | 1e-8 | 1e-4 |
+|  Lion  | 0.852 | 1745 sec. | 1e-5 | 1e-8 | 1e-3 |
+|  Lion+SAM  | 0.856 | 3248 sec. | 1e-5 | 1e-8 | 1e-3 |
   
-<img src="images/resnet50_epoch_acc_curve.png" alt="epoch_accuracy_curve" width="480px" />
+<img src="images/resnet50.png" alt="resnet50" width="480px" />
 
   
 ### 所見
@@ -92,6 +95,17 @@ PRを適用して weight_decay=1e-4 を導入・再度実験した.
 厳しく見るとやや劣る程度かという印象がある.  
 ただしここでは試行回数やランダムネスの検証が不足していることや、  
 評価指標としてはValidation accuracy であるため汎化性能ではないことに注意.  
+
+**UPD3**
+現状のAdamWの設定はlr=1e-4, wd=1e-4であるため、
+lr * wd を等しく保つとよいとの記載に従いlionの設定を変更.  
+lr=1e-5, wd=1e-3にして再度実験して結果を更新.  
+wd=1e-4よりもよくなっているように見受けられる.  
+  
+またViTではいずれのOptimizerであっても過学習で安定していないように見える.  
+(warmupの間で最高値に到達していることがある)  
+さらにlrをさげるかhead(最終層)のみtrainingするなどで  
+改善するかどうかを試した方がよい可能性がある.
 
 ## 使用方法
 
@@ -148,7 +162,7 @@ python train.py >> log.txt
 | RAM | 64GB |
 | GPU | NVIDIA RTX 4070 Ti | 
 
-## メモ
+## ToDoなど
 **Data Augmentation**  
 オーグメンテーションなどはコード記載通りでResize以外なにもしていないので流石に実用としては甘すぎるか.  
 HorizontalFlipなどは加えた方がよいかもしれない.  
@@ -157,6 +171,13 @@ HorizontalFlipなどは加えた方がよいかもしれない.
 Optimizerの設定が増えてきたのでconfigファイルなどを外だししたい.  
 jsonなどで切り替えられるようにすると実験ミスなどが減る想定.
   
+**amp(fp16/bf16)**
+現状はfp16を用いて検証しているが、fp32/bf16の検証結果も記載したい.  
+
+**サンプル増し検証**
+seedを固定しておらず、N=1での実験結果であるためブレが存在すると想定される.  
+計算速度や精度を踏まえるとN=3程度は回して検証したい.  
+
 ## 引用
 * Dataset  
 kaggleの[dog-breed-identification](https://www.kaggle.com/c/dog-breed-identification)より引用.  
