@@ -1,8 +1,9 @@
 ## Lion
 
 Lion のハイパーパラメータ調査.  
-あまり大きな差は得られていないが実験結果からは Learning_rate x weight_decay の関係を用いて、 
-AdamW の設定値と同じにするとよいように見える.  
+lrに関しては効果が大きいのでAdamWのx0.1を適用するとよいようだ.  
+wdに関してはあまり大きな差は得られていないが、実験結果の上では  
+Learning_rate x weight_decay の関係を用い AdamW の設定値と同じにするとよいように見える.  
 
 ### tf_efficientnet_b0
 | Optimizer |  Accuracy |  Training Time |  Initial LR | warmup LR | weight deacy |  
