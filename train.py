@@ -12,8 +12,18 @@ from torch.utils.data.dataset import Dataset
 from sklearn.metrics import accuracy_score
 from timm.scheduler import CosineLRScheduler
 
-import dadaptation
-from lion_pytorch import Lion
+try:
+    import dadaptation
+except ModuleNotFoundError:
+    print('Module Not Found: dadaptation')
+try:
+    from lion_pytorch import Lion
+except ModuleNotFoundError:
+    print('Module Not Found: lion_pytorch')
+try:
+    from Sophia.Sophia import SophiaG
+except ModuleNotFoundError:
+    print('Module Not Found: Sophia')
 
 class CFG:
     device = 'cuda'
@@ -30,7 +40,7 @@ class CFG:
     train_csv = 'sample_train.csv'
     valid_csv = 'sample_valid.csv'
     # Select Optimizer:
-    optimizer = 'Adam'
+    # optimizer = 'Adam'
     # optimizer = 'SAM_Adam'
     # optimizer = 'AdamW'
     # optimizer = 'SAM_AdamW'
@@ -38,6 +48,7 @@ class CFG:
     # optimizer = 'SAM_DAdaptAdam'
     # optimizer = 'Lion'
     # optimizer = 'SAM_Lion'
+    optimizer = 'SophiaG'
     # Select Model:
     model_name = 'resnet50'
     # model_name = 'tf_efficientnet_b0'
@@ -69,6 +80,10 @@ def get_optimizer_and_scheduler(model):
     if CFG.optimizer == 'SAM_Lion':
         optim = SAM(model.parameters(), Lion, lr=1e-5, weight_decay=1e-3, rho=0.05)
         base_lr = 1e-5
+    if CFG.optimizer == 'SophiaG':
+        # optim = SophiaG(model.parameters(), lr=1e-4, betas=(0.965, 0.99), rho=0.01, weight_decay=1e-1)
+        optim = SophiaG(model.parameters(), lr=1e-4, betas=(0.965, 0.99), rho=0.01, weight_decay=0)
+        base_lr = 1e-4
     if optim is None:
         raise NameError('{} is not defined.'.format(CFG.optimizer))
     scheduler = CosineLRScheduler(optim, t_initial=CFG.epoch, lr_min=base_lr * 1e-3, warmup_t=3, warmup_lr_init=base_lr * 1e-2, warmup_prefix=True)

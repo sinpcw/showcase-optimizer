@@ -1,7 +1,7 @@
 # Optimizer比較
 
 いくつかのOptimizerについて精度・学習時間などの観点で実験した結果についてを示す.   
-現在はAdam, AdamW, DAdaptationAdam, Lion に加えてSAMの併用した結果を挙げている.
+現在はAdam, AdamW, DAdaptationAdam, Lion, Sophia に加えてSAMの併用した結果を挙げている.  
 
 ## 概要
 検証用Datasetについてはkaggleからダウンロードした学習データを利用.  
@@ -12,6 +12,13 @@ D-Adaptationにはschedulerについては通常通りのものを利用との�
 timm のスケジューラを利用して 3epoch の warmup を実施後に通常の lr となるように設定.  
   
 オーグメンテーションなどの設定はコード記載通り.  
+
+なお下記の性能は PyTorch 1.13 による比較であるが PyTorch 2.0 で実行するとかなり速度が速くなる.  
+具体的に ResNet50 on Adamでの比較では下記の通りである.
+| PyTorh Version | Training Time | 
+| ---- | ---- |
+| 1.13  | 1780 sec. |
+| 2.0  | 845 sec. |
 
 ## 結果
 
@@ -53,16 +60,18 @@ Lionのハイパーパラメータによる調査は[こちら](./result_lion.md
 
 ### resnet50
 
-| Optimizer | Accuracy | Training Time | Initial LR | warmup LR | weight deacy |
-| ---- | ---- | ---- | ---- | ---- | ---- |
-|  Adam  | 0.858 |  1778 sec.| 1e-4 | 1e-7 | - |
-|  Adam+SAM  | 0.866 | 3240 sec. | 1e-4 | 1e-7 | - |
-|  AdamW  | 0.860 |  1778 sec.| 1e-4 | 1e-7 |  1e-4  |
-|  AdamW+SAM  | 0.867 | 3240 sec. | 1e-4 | 1e-7 | 1e-4 |
-|  Lion  | 0.849 | 1752 sec. | 1e-5 | 1e-8 | 1e-4 |
-|  Lion+SAM  | 0.856 | 3214 sec. | 1e-5 | 1e-8 | 1e-4 |
-|  Lion  | 0.852 | 1745 sec. | 1e-5 | 1e-8 | 1e-3 |
-|  Lion+SAM  | 0.856 | 3248 sec. | 1e-5 | 1e-8 | 1e-3 |
+| Optimizer | Accuracy | Training Time | Initial LR | warmup LR | weight deacy | note |
+| ---- | ---- | ---- | ---- | ---- | ---- | ---- |
+|  Adam  | 0.858 |  1778 sec.| 1e-4 | 1e-7 | - | - |
+|  Adam+SAM  | 0.866 | 3240 sec. | 1e-4 | 1e-7 | - | - |
+|  AdamW  | 0.860 |  1778 sec.| 1e-4 | 1e-7 |  1e-4  | - |
+|  AdamW+SAM  | 0.867 | 3240 sec. | 1e-4 | 1e-7 | 1e-4 | - |
+|  Lion  | 0.849 | 1752 sec. | 1e-5 | 1e-8 | 1e-4 | - |
+|  Lion+SAM  | 0.856 | 3214 sec. | 1e-5 | 1e-8 | 1e-4 | - |
+|  Lion  | 0.852 | 1745 sec. | 1e-5 | 1e-8 | 1e-3 | - |
+|  Lion+SAM  | 0.856 | 3248 sec. | 1e-5 | 1e-8 | 1e-3 | - |
+|  SohpiaG  | 0.828 | 1827 sec. | 1e-4 | 1e-7 | 1e-1 | rho=0.01 |
+|  SohpiaG  | 0.818 | 1819 sec. | 1e-4 | 1e-7 | - | rho=0.01 |
   
 <img src="images/resnet50.png" alt="resnet50" width="480px" />
 
@@ -106,6 +115,10 @@ wd=1e-4よりもよくなっているように見受けられる.
 (warmupの間で最高値に到達していることがある)  
 さらにlrをさげるかhead(最終層)のみtrainingするなどで  
 改善するかどうかを試した方がよい可能性がある.
+
+**UPD4**
+Sophia Optimizerの実験を追加したが、Adamと比べてよくない.  
+rhoなどの値を調整する必要があるのか、そもそもタスクとして既存タスクには向かないのか検証が必要.  
 
 ## 使用方法
 
@@ -193,3 +206,13 @@ kaggleの[dog-breed-identification](https://www.kaggle.com/c/dog-breed-identific
 * Lion  
 論文は[Symbolic Discovery of Optimization Algorithms](https://arxiv.org/abs/2302.06675)  
 [Lion - Pytorch](https://github.com/lucidrains/lion-pytorch)の実装を利用.
+
+* Sopiha
+論文は[Sophia: A Scalable Stochastic Second-order Optimizer for
+Language Model Pre-training](https://arxiv.org/pdf/2305.14342.pdf)  
+[Sophia Optimizer](https://github.com/kyegomez/Sophia)の実相を利用.  
+なおライブラリを pip install で導入したが、下記部分をコメントアウトしないと ModuleNotFoundError を解決できなかった.  
+```python
+# Sophia.__init__.py
+from experiments.training import trainer
+```
