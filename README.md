@@ -210,7 +210,7 @@ kaggleの[dog-breed-identification](https://www.kaggle.com/c/dog-breed-identific
 * Sopiha
 論文は[Sophia: A Scalable Stochastic Second-order Optimizer for
 Language Model Pre-training](https://arxiv.org/pdf/2305.14342.pdf)  
-[Sophia Optimizer](https://github.com/kyegomez/Sophia)の実相を利用.  
+[Sophia Optimizer](https://github.com/kyegomez/Sophia)の実装を利用.  
 なおライブラリを pip install で導入したが、下記部分をコメントアウトしないと ModuleNotFoundError を解決できなかった.  
 ```python
 # Sophia.__init__.py
