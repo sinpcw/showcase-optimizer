@@ -215,6 +215,5 @@ kaggleの[dog-breed-identification](https://www.kaggle.com/c/dog-breed-identific
 [Lion - Pytorch](https://github.com/lucidrains/lion-pytorch)の実装を利用.
 
 * Sopiha
-論文は[Sophia: A Scalable Stochastic Second-order Optimizer for
-Language Model Pre-training](https://arxiv.org/pdf/2305.14342.pdf)  
+論文は[Sophia: A Scalable Stochastic Second-order Optimizer for Language Model Pre-training](https://arxiv.org/pdf/2305.14342.pdf)  
 [Sophia](https://github.com/Liuhong99/Sophia)の[実装](https://github.com/Liuhong99/Sophia/blob/main/sophia.py)を利用.  
